@@ -12,6 +12,7 @@ import GPUImage
 class FirstViewController: UIViewController {
     
     @IBOutlet weak var renderView: RenderView!
+    @IBOutlet weak var imageView: UIImageView!
     
     @IBOutlet weak var smoothingSlider: UISlider!
     @IBOutlet weak var tresholdSlider: UISlider!
@@ -20,6 +21,7 @@ class FirstViewController: UIViewController {
     var blendPicture = PictureInput(image: UIImage(named: "forest.jpg")!)
     var filter = ChromaKeying()
     var color: Color = Color(red: 42/255, green: 253/255, blue: 52/255)
+    let output = PictureOutput()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,8 +54,16 @@ class FirstViewController: UIViewController {
     }
     
     private func process() {
-        picture --> filter --> renderView
-        picture.processImage()
+        output.imageAvailableCallback = { image in
+            NSOperationQueue.mainQueue().addOperationWithBlock {
+                self.imageView.image = image
+            }
+        }
+        picture --> filter
+        filter --> renderView
+        filter --> output
+    
+        picture.processImage(synchronously: true)
     }
     
     func pictureURL() -> NSURL {
