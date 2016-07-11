@@ -12,57 +12,53 @@ import GPUImage
 class FirstViewController: UIViewController {
     
     @IBOutlet weak var renderView: RenderView!
-    @IBOutlet weak var colorView: UIView!
-    var picture: PictureInput? = nil
+    
+    @IBOutlet weak var smoothingSlider: UISlider!
+    @IBOutlet weak var tresholdSlider: UISlider!
+    
+    var picture = PictureInput(image: UIImage(named: "test.jpg")!)
+    var blendPicture = PictureInput(image: UIImage(named: "forest.jpg")!)
     var filter = ChromaKeying()
-    var color: Color = Color(red: 0, green: 0, blue: 0)
+    var color: Color = Color(red: 42/255, green: 253/255, blue: 52/255)
     
-    
-    @IBAction func pickImageTapped(sender: UIButton) {
-        let controller = UIImagePickerController()
-        controller.delegate = self
-        presentViewController(controller, animated: true, completion: nil)
-    }
-    
-    @IBAction func redSliderMoved(sender: UISlider) {
-        color = Color(red: sender.value, green: color.green, blue: color.blue)
-        updateFilter()
-    }
-
-    @IBAction func greenSliderMoved(sender: UISlider) {
-        color = Color(red: color.red, green: sender.value, blue: color.blue)
-        updateFilter()
-    }
-
-    @IBAction func blueSliderMoved(sender: UISlider) {
-        color = Color(red: color.red, green: color.green, blue: sender.value)
-        updateFilter()
-    }
-    
-    private func updateFilter() {
-        colorView.backgroundColor = UIColor(red: CGFloat(color.red), green: CGFloat(color.green), blue: CGFloat(color.blue), alpha: 1.0)
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        filter.thresholdSensitivity = 0.3
         filter.colorToReplace = color
+        
+        smoothingSlider.value = filter.smoothing
+        tresholdSlider.value = filter.thresholdSensitivity
+        
+        renderView.backgroundRenderColor = Color(red: 1, green: 1, blue: 1)
+        renderView.backgroundColor = UIColor.clearColor()
+        
+        process()
     }
     
+    
+    @IBAction func thresholdSliderMoved(sender: UISlider) {
+        filter.thresholdSensitivity = sender.value
+        process()
+    }
+
+    @IBAction func smoothingSliderMoved(sender: UISlider) {
+        filter.smoothing = sender.value
+        process()
+    }
+
     @IBAction func applyFilterTapped(sender: UIButton) {
-        guard let picture = self.picture else { return }
-        picture.removeAllTargets()
+        process()
+    }
+    
+    private func process() {
         picture --> filter --> renderView
         picture.processImage()
     }
-}
-
-extension FirstViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
-    func imagePickerControllerDidCancel(picker: UIImagePickerController) {
-        dismissViewControllerAnimated(true, completion: nil)
-    }
-    
-    func imagePickerController(picker: UIImagePickerController, didFinishPickingImage image: UIImage, editingInfo: [String : AnyObject]?) {
-        let input = PictureInput(image: image)
-        input --> renderView
-        input.processImage()
-        dismissViewControllerAnimated(true, completion: nil)
-        picture = input
+    func pictureURL() -> NSURL {
+        let path = NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true).first!
+        let url = NSURL(fileURLWithPath: path)
+        return url.URLByAppendingPathComponent("picture.png")
     }
 }
